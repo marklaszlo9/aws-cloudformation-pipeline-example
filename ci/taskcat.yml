@@ -1,12 +1,8 @@
-global:
-  owner: JasonAGiles
-  qsname: aws-cloudformation-pipeline-example
+project:
+  name: taskcat-example
   regions:
-    - us-east-1
-    - us-east-2
-    - us-west-1
-    - us-west-2
+    - eu-central-1
+    - eu-west-1
 tests:
-  us-regions:
-    template_file: workload.template
-    parameter_input: input.json
+  sqs-test:
+    template: templates/workload.template

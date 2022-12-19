@@ -6,8 +6,6 @@ phases:
             python: 3.x
         commands:
             - echo Entered the install phase...
-            - yum update -y
-            - yum install jq git -y -q
             - gem install cfn-nag
     pre_build:
         commands:
@@ -17,7 +15,7 @@ phases:
             - "export dirname=${PWD##*/}"
             - echo Directory name $dirname
             - echo Installing Taskcat using pip3...
-            - pip3 install taskcat
+            - pip3 install cfn-lint taskcat
             - echo Verifying Taskcat installation...
             - taskcat -v
             - echo Configuring aws cli...

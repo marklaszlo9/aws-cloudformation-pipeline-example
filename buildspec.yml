@@ -38,15 +38,19 @@ phases:
             - echo run CFN-Nag to pinpoint security problems
             - cfn_nag_scan --input-path  templates/*
             - cfn_nag_scan --input-path  templates/* > cfn_nag_scan_output.log
-            - |
-              if $(grep -Fq "FAIL" cfn_nag_scan_output.log)
-              then
-                echo CFN-Nag security check FAILED!
-                exit 1
-              else
-                echo CFN-Nag security check Passed!
-                exit 0
-              fi
+            - mkdir report || echo "dir report exists"
+            - SCAN_RESULT=$(cfn_nag_scan --fail-on-warnings --input-path  templates/* -o json > ./report/cfn_nag.out.json && echo OK || echo FAILED)
+            - echo Completed cfn scanning `date`
+            - echo Generating report and import to Security Hub `date`
+            - | 
+              source_repository=${!CODEBUILD_SRC_DIR##*/} jq  \
+              "{ \"messageType\": \"CodeScanReport\", \"reportType\": \"CFN-NAG\", \
+              \"createdAt\": env.date, \"source_repository\": env.source_repository, \
+              \"source_branch\": env.CODEBUILD_SOURCE_VERSION, \
+              \"build_id\": env.CODEBUILD_BUILD_ID, \
+              \"source_commitid\": env.CODEBUILD_RESOLVED_SOURCE_VERSION, \
+              \"report\": . }" ./report/cfn_nag.out.json > payload.json
+            - if [[ "$FAIL_BUILD" = "true" && "$SCAN_RESULT" = "FAILED" ]]; then printf "\n\nFailiing pipeline as possible insecure configurations were detected\n\n" && exit 1; fi
             - echo run Taskcat tests...
             - taskcat test run -l
             - |
@@ -61,6 +65,12 @@ phases:
     post_build:
         commands:
             - echo Build completed on `date`
+reports: 
+    SecurityReports: 
+      files: 
+        - report/junit_scan_report.xml
+      discard-paths: 'yes'
+      file-format: JunitXml
 artifacts:
   files:
     - taskcat_outputs/*

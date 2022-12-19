@@ -5,4 +5,4 @@ project:
     - eu-west-1
 tests:
   default:
-    template: ../templates/workload.template
+    template: templates/workload.template

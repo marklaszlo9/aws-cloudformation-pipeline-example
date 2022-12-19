@@ -23,15 +23,4 @@ phases:
       - cfn_nag --output-format txt templates/workload.template
 
       # Run taskcat, strip color escape codes, output taskcat log files on STDOUT, and exit with result of taskcat
-      - |
-        taskcat test run -p ci/taskcat.yml | sed "s,\x1B\[[0-9;]*[a-zA-Z],,g"
-        TASKCAT_RESULT=${PIPESTATUS[0]}
-
-        ls -1 taskcat_outputs/*.txt | while read LOG
-        do
-          echo
-          echo "> $LOG"
-          cat ${LOG}
-        done
-
-        exit $TASKCAT_RESULT
+      - taskcat test run -p ci/taskcat.yml 

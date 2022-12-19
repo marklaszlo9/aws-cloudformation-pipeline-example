@@ -18,7 +18,6 @@ phases:
       # Validate Template
       - aws cloudformation validate-template --template-body file://templates/workload.template
 
-      - cfn-lint --include-checks I --template templates/workload.template
 
       # Run CFN Nag
       - cfn_nag --fail-on-warnings --output-format txt templates/workload.template

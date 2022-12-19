@@ -3,6 +3,6 @@ project:
   regions:
     - eu-central-1
     - eu-west-1
-test:
-  sqs-test:
-    template: templates/workload.template
+tests:
+  default:
+    template: ./templates/workload.template

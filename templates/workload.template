@@ -1,13 +1,18 @@
-AWSTemplateFormatVersion: "2010-09-09"
-
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Stelligent CloudFormation Sample Template ** This template creates one
+  or more Amazon resources. You will be billed for the AWS resources used if you create
+  a stack from this template.
 Resources:
-  Bucket:
-    Type: AWS::S3::Bucket
+  MyQueue:
+    Type: AWS::SQS::Queue
     Properties:
-      AccessControl: LogDeliveryWrite
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-          - ServerSideEncryptionByDefault:
-              SSEAlgorithm: aws:kms
-              KMSMasterKeyID: alias/aws/s3
-      LoggingConfiguration: {}
+      QueueName:
+        Fn::Join:
+        - ''
+        - - SampleQueue-
+          - Ref: AWS::StackName
+Outputs:
+  MyAWSAccountId:
+    Value:
+      Ref: AWS::AccountId

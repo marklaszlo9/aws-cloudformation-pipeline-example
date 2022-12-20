@@ -17,6 +17,12 @@ phases:
             - pip3 install cfn-lint taskcat
             - echo Verifying Taskcat installation...
             - taskcat -v
+            - echo "Configuring taskcat..."
+            - |
+              cat << EOF > ~/.taskcat.yml
+              general:
+                s3_regional_buckets: true
+              EOF
             - echo Configuring aws cli...
             - aws configure set default.region eu-west-1
     build:
@@ -51,16 +57,23 @@ phases:
               \"report\": . }" ./report/cfn_nag.out.json > payload.json
             - if [[ "$FAIL_BUILD" = "true" && "$SCAN_RESULT" = "FAILED" ]]; then printf "\n\nFailiing pipeline as possible insecure configurations were detected\n\n" && exit 1; fi
             - echo run Taskcat tests...
-            - taskcat test run -l
+            - taskcat test run --minimal-output --lint-disable
             - |
               if $(grep -Fq "CREATE_FAILED" taskcat_outputs/index.html)
               then
-                echo Taskcat check FAILED!
+                echo "Build failed!"
                 exit 1
               else
-                echo Taskcat check Passed!
+                echo "Build passed!"
                 exit 0
               fi
+          finally:
+            - ls -1 taskcat_outputs
+            - ls -1 taskcat_outputs | while read LOG; do cat taskcat_outputs/$LOG; done
+            - >- # Do not remove
+              echo "Zipping and uploading report to S3 bucket: '$ARTIFACT_BUCKET'..."
+            - zip -r taskcat_report.zip taskcat_outputs
+            - aws s3 cp taskcat_report.zip s3://$ARTIFACT_BUCKET/taskcat_reports/$CODEBUILD_BUILD_ID.zip
     post_build:
         commands:
             - echo Build completed on `date`

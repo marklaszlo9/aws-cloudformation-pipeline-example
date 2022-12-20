@@ -81,11 +81,5 @@ phases:
   post_build:
     commands:
       - echo Build completed on `date`
-reports:
-  SecurityReports:
-    files:
-      - report/junit_scan_report.xml
-    discard-paths: yes
-    file-format: JunitXml
 artifacts:
   files: '*'

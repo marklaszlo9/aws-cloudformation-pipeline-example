@@ -81,50 +81,6 @@ phases:
   post_build:
     commands:
       - echo Build completed on `date`
-version: 0.2
-phases:
-  install:      
-    commands:
-      - export date=`date +%Y-%m-%dT%H:%M:%S.%NZ`
-      - echo Installing cloudformation-guard
-      - yum install glibc-devel gcc git make jq -y
-      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-      - git clone https://github.com/aws-cloudformation/cloudformation-guard.git --depth 1 /usr/local/cloudformation-guard
-      - source $HOME/.cargo/env
-      - (cd /usr/local/cloudformation-guard && make )
-      - export PATH=$PATH:/usr/local/cloudformation-guard/bin/
-  build:
-    commands:
-      - echo Starting cfn-guard scanning `date` in `pwd`
-      - RULESET_PATH=/usr/local/cloudformation-guard/Examples/security_rules.ruleset
-      - mkdir report || echo "dir report exists"
-      - echo Generating report 
-      - find . -name "*.json" -or -name "*.yaml" > report/iterator
-      - echo "[]" > report/final_report.json
-      - SCAN_RESULT="OK"
-      - |
-       while read -r template
-        do
-          cfn-guard check --rule_set $RULESET_PATH --template  "$template" > ./report/template_report
-          if [ $? -ne 0 ]; then SCAN_RESULT="FAILED"; fi
-          if [ ! -s ./report/template_report ]; then
-            rm ./report/template_report
-          else
-            jq -R "{ \"file\": \"$template\", \"message\" : select( . | contains(\"Number of failures\") | not ) } " ./report/template_report | jq -s . > ./report/template_report.json
-            jq -s ' . | add' ./report/final_report.json ./report/template_report.json > ./report/new_report.json
-            mv ./report/new_report.json ./report/final_report.json 
-          fi
-        done < report/iterator
-      - echo Completed cfn-guard scanning `date`
-      - | 
-        source_repository=${!CODEBUILD_SRC_DIR##*/} jq  \
-        "{ \"messageType\": \"CodeScanReport\", \"reportType\": \"CFN-GUARD\", \
-        \"createdAt\": env.date, \"source_repository\": env.source_repository, \
-        \"source_branch\": env.CODEBUILD_SOURCE_VERSION, \
-        \"build_id\": env.CODEBUILD_BUILD_ID, \
-        \"source_commitid\": env.CODEBUILD_RESOLVED_SOURCE_VERSION, \
-        \"report\": . }" ./report/final_report.json > payload.json
-      - if [[ "$FAIL_BUILD" = "true" && "$SCAN_RESULT" = "FAILED" ]]; then printf "\n\nFailiing pipeline as possible insecure configurations were detected\n\n" && exit 1; fi
 reports:
   SecurityReports:
     files:
@@ -132,6 +88,4 @@ reports:
     discard-paths: yes
     file-format: JunitXml
 artifacts:
-  files:
-    - taskcat_outputs/*
-  name: taskcat-report
+  files: '*'
